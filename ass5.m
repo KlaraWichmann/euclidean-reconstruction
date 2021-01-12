@@ -60,7 +60,12 @@ function ass5 ()
   
   #------ geometric_error ----------
   geometric_error = geom_dist(f, first_x, first_y, second_x, second_y)
-  CreateProjectionMatrices;
+  
+  
+  #---- ass 5------
+  CreateProjectionMatrix_N;
+  CreateProjectionMatrix_P(f,second_x, second_y);
+  
   endfunction
 
 function sum = geom_dist(f, first_x, first_y, second_x, second_y)
@@ -112,11 +117,30 @@ function t = CreateTransformationMatrix(tx, ty, sx, sy)
   
   t = t_scale*t_translate;
 endfunction
-function p = CreateProjectionMatrices
-  #TODO - how big should the identity matrix be?
-  Pn = eye(4);
+
+# caluclate projection matrix N for simple camera 1
+function p = CreateProjectionMatrix_N
+  Pn = eye(3);
   Pn = [Pn, zeros(rows(Pn),1)]; 
 endfunction
+
+
+# caluclate projection matrix P' for second camera
+function p = CreateProjectionMatrix_P(F, second_x, second_y)
+  # calculate second epipole (by finding intersection of two epipolar lines)
+  corr_point_1 = [second_x(1), second_y(1), 1];
+  corr_point_2 = [second_x(2), second_y(2), 1];
+  epipolar_line_T_1 =  transpose(F) * transpose(corr_point_1);
+  epipolar_line_T_2 =  transpose(F) * transpose(corr_point_2);
+  e = cross(epipolar_line_T_1,epipolar_line_T_2)
+  #skew symmetric matrix derived from second epipole
+  skew = [0,-e(3), e(2); e(3), 0, -e(1); -e(2), e(1), 0]
+  p = skew * F;
+  #add second epipole as 4th column
+  p = [p,e]
+endfunction
+
+
 
     
 
