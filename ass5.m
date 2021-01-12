@@ -63,8 +63,11 @@ function ass5 ()
   
   
   #---- ass 5------
-  CreateProjectionMatrix_N;
-  CreateProjectionMatrix_P(f,second_x, second_y);
+  p = CreateProjectionMatrix_N;
+  p_prime = CreateProjectionMatrix_P(f,second_x, second_y);
+  X = linear_triangulation(p, p_prime, second_x, second_y, first_x, first_y);
+  figure; scatter3(X(1,:), X(2,:), X(3,:), 10, 'filled');
+           axis square; view(32, 75);
   
   endfunction
 
@@ -119,7 +122,7 @@ function t = CreateTransformationMatrix(tx, ty, sx, sy)
 endfunction
 
 # caluclate projection matrix N for simple camera 1
-function p = CreateProjectionMatrix_N
+function Pn = CreateProjectionMatrix_N
   Pn = eye(3);
   Pn = [Pn, zeros(rows(Pn),1)]; 
 endfunction
@@ -140,9 +143,22 @@ function p = CreateProjectionMatrix_P(F, second_x, second_y)
   p = [p,e]
 endfunction
 
-
-
-    
-
-
-
+function X_mat = linear_triangulation(p, p_prime, second_x, second_y, first_x, first_y)
+  #find  4x4 matrix A for each point pair
+  for point_number = 1 : size(first_x, 2)
+    A = [first_x(point_number)*p(3, :)-p(1, :); 
+    first_y(point_number)*p(3, :)-p(2), :; 
+    second_x(point_number)*p_prime(3, :)-p_prime(1, :);
+    second_y(point_number)*p_prime(3, :)-p_prime(2, :)];
+    # find object point X using constraint AX = 0
+    [u,s,v] = svd(A);
+    X = v(: ,4);
+    X = X / X(4); 
+    if point_number == 1
+      X_mat = X;
+    else
+     X_mat = [X_mat, X];  
+    end
+  end
+  
+endfunction
