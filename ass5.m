@@ -63,11 +63,23 @@ function ass5 ()
   
   
   #---- ass 5------
+  #---- part 1------
   p = CreateProjectionMatrix_N;
   p_prime = CreateProjectionMatrix_P(f,second_x, second_y);
   X = linear_triangulation(p, p_prime, second_x, second_y, first_x, first_y);
-  figure; scatter3(X(1,:), X(2,:), X(3,:), 10, 'filled');
-           axis square; view(32, 75);
+  figure; scatter3(X(1,:), X(2,:), X(3,:), 10, 'filled'); axis square; view(32, 75);
+  
+  #---- part 2------
+  
+  fh = fopen('pp.dat', 'r');
+  B = fscanf(fh, '%f%f%f%f%f%f%f', [7 inf]); fclose(fh);
+  pp_first_x = B(1:1, :);
+  pp_first_y = B(2:2, :);
+  pp_second_x = B(3:3, :);
+  pp_second_y = B(4:4, :);
+  XE = B(5:5, :);
+  YE = B(6:6, :);
+  ZE = B(7:7, :);
   
   endfunction
 
