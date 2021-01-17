@@ -1,5 +1,11 @@
 function ass5 ()
-    
+  fh = fopen('bh.dat', 'r');
+  A = fscanf(fh, '%f%f%f%f', [4 inf]); fclose(fh);
+  first_x = A(1:1, :);
+  first_y = A(2:2, :);
+  second_x = A(3:3, :);
+  second_y = A(4:4, :);
+  
   # -----------normalizing image points----------------
   tx_first = mean(first_x);
   ty_first = mean(first_y);
@@ -54,14 +60,7 @@ function ass5 ()
   
   
   #---- ass 5------
-  #---- part 1------
-  fh = fopen('bh.dat', 'r');
-  A = fscanf(fh, '%f%f%f%f', [4 inf]); fclose(fh);
-  first_x = A(1:1, :);
-  first_y = A(2:2, :);
-  second_x = A(3:3, :);
-  second_y = A(4:4, :);
-  
+  #---- part 1------  
   p = CreateProjectionMatrix_N;
   p_prime = CreateProjectionMatrix_P(f,second_x, second_y);
   X = linear_triangulation(p, p_prime, first_x, first_y, second_x, second_y);
@@ -83,8 +82,27 @@ function ass5 ()
   ZE = B(7:7, :);
   
   X2 = linear_triangulation(p, p_prime, pp_first_x, pp_first_y, pp_second_x, pp_second_y);
+  H = homography3(X2, XE);
   
-  endfunction
+  result = [];
+  for point_num = 1 : size(X, 2)
+    x = X(:, i) * H;
+    result = [result, x];
+  end
+  
+  %normalizing result  
+  result(1, 1) /= result(4, 1); 
+  result(2, 1) /= result(4, 1); 
+  result(3, 1) /= result(4, 1); 
+  result(4, 1) /= result(4, 1); 
+  
+  
+  figure; 
+  scatter3(result(1,:), result(2,:), result(3,:), 10, 'filled'); 
+  axis square; 
+  view(32, 75);
+  
+endfunction
 
 function sum = geom_dist(f, first_x, first_y, second_x, second_y)
   sum = 0;
@@ -176,5 +194,42 @@ function X_mat = linear_triangulation(p, p_prime, first_x, first_y, second_x, se
     X(4, 1) /= X(4, 1); 
     X_mat = [X_mat, X];  
   end
-  
+endfunction
+
+function H = homography3(x1, x2)
+  T1 = condition3(x1); c1 = T1 * x1;
+  T2 = condition3(x2); c2 = T2 * x2;
+  A = design_homo3(c1, c2);
+  h = solve_dlt(A);
+  H = inv(T2) * reshape(h, 4, 4)' * T1;
+endfunction
+function T = condition2(x)
+  tx = mean(x(1, :));           ty = mean(x(2, :));
+  sx = mean(abs(x(1, :) - tx)); sy = mean(abs(x(2, :) - ty));
+  T = [1/sx 0     -tx/sx;
+      0     1/sy  -ty/sy;
+      0     0     1];
+endfunction
+
+function T = condition3(x)
+  tx = mean(x(1, :));             ty = mean(x(2, :));             tz = mean(x(3, :));
+  sx = mean(abs(x(1, :) - tx));   sy = mean(abs(x(2, :) - ty));   sz = mean(abs(x(3, :) - tz));
+  T = [1/sx 0     0     -tx/sx;
+      0     1/sy  0     -ty/sy;
+      0     0     1     -ty/sz;
+      0     0     0     1];
+endfunction
+function A = design_homo3(x1, x2)
+  A = [];
+  for i = 1 : size(x1, 2)
+     A = [A;
+          -x2(4, i) * x1(:, i)'   0   0   0   0   0   0   0   0   x2(1, i) * x1(:, i)';
+          0   0   0   0   -x2(4, i) * x1(:, i)'   0   0   0   0   x2(2, i) * x1(:, i)';
+          0   0   0   0   0   0   0   0   -x2(4, i) * x1(:, i)'   x2(3, i) * x1(:, i)';];
+  endfor
+endfunction
+
+function x = solve_dlt(A)
+  [U, D, V] =  svd(a);
+  x = V(:, end);
 endfunction
