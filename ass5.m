@@ -64,7 +64,7 @@ function ass5 ()
   p = CreateProjectionMatrix_N;
   p_prime = CreateProjectionMatrix_P(f,second_x, second_y);
   X = linear_triangulation(p, p_prime, first_x, first_y, second_x, second_y);
-  figure; 
+  figure(1); 
   scatter3(X(1,:), X(2,:), X(3,:), 10, 'filled'); 
   axis square; 
   view(32, 75);
@@ -81,23 +81,28 @@ function ass5 ()
   YE = B(6:6, :);
   ZE = B(7:7, :);
   
+  % triangulate projective object points X2 from the five homologous image points using projection matrices p and p_prime.
   X2 = linear_triangulation(p, p_prime, pp_first_x, pp_first_y, pp_second_x, pp_second_y);
+  
+  % spatial 3D homography H - determination of spatial transformation of projective object points X2 to 
+  % corresponding Euclidean object points XE.
   H = homography3(X2, XE);
   
+  % Apply transformation H to all object points of projective reconstruction X
   result = [];
   for point_num = 1 : size(X, 2)
     x = X(:, i) * H;
     result = [result, x];
   end
   
-  %normalizing result  
+  % normalizing result  
   result(1, 1) /= result(4, 1); 
   result(2, 1) /= result(4, 1); 
   result(3, 1) /= result(4, 1); 
   result(4, 1) /= result(4, 1); 
   
-  
-  figure; 
+  % visualizing result  
+  figure(2); 
   scatter3(result(1,:), result(2,:), result(3,:), 10, 'filled'); 
   axis square; 
   view(32, 75);
@@ -203,20 +208,15 @@ function H = homography3(x1, x2)
   h = solve_dlt(A);
   H = inv(T2) * reshape(h, 4, 4)' * T1;
 endfunction
-function T = condition2(x)
-  tx = mean(x(1, :));           ty = mean(x(2, :));
-  sx = mean(abs(x(1, :) - tx)); sy = mean(abs(x(2, :) - ty));
-  T = [1/sx 0     -tx/sx;
-      0     1/sy  -ty/sy;
-      0     0     1];
-endfunction
 
 function T = condition3(x)
+  % error occurs when x = XE because XE only has 1 line 
+  %- unfortunatly we didn't manage to fix this problem (therefore no second figure is portrayed)
   tx = mean(x(1, :));             ty = mean(x(2, :));             tz = mean(x(3, :));
   sx = mean(abs(x(1, :) - tx));   sy = mean(abs(x(2, :) - ty));   sz = mean(abs(x(3, :) - tz));
   T = [1/sx 0     0     -tx/sx;
       0     1/sy  0     -ty/sy;
-      0     0     1     -ty/sz;
+      0     0     1/sz  -tz/sz;
       0     0     0     1];
 endfunction
 function A = design_homo3(x1, x2)
@@ -230,6 +230,6 @@ function A = design_homo3(x1, x2)
 endfunction
 
 function x = solve_dlt(A)
-  [U, D, V] =  svd(a);
+  [U, D, V] =  svd(A);
   x = V(:, end);
 endfunction
