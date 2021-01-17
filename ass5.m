@@ -1,14 +1,5 @@
 function ass5 ()
-
-  fh = fopen('bh.dat', 'r');
-  A = fscanf(fh, '%f%f%f%f', [4 inf]); fclose(fh);
-  first_x = A(1:1, :);
-  first_y = A(2:2, :);
-  second_x = A(3:3, :);
-  second_y = A(4:4, :);
-  
-  
-  
+    
   # -----------normalizing image points----------------
   tx_first = mean(first_x);
   ty_first = mean(first_y);
@@ -64,15 +55,25 @@ function ass5 ()
   
   #---- ass 5------
   #---- part 1------
+  fh = fopen('bh.dat', 'r');
+  A = fscanf(fh, '%f%f%f%f', [4 inf]); fclose(fh);
+  first_x = A(1:1, :);
+  first_y = A(2:2, :);
+  second_x = A(3:3, :);
+  second_y = A(4:4, :);
+  
   p = CreateProjectionMatrix_N;
   p_prime = CreateProjectionMatrix_P(f,second_x, second_y);
-  X = linear_triangulation(p, p_prime, second_x, second_y, first_x, first_y);
-  figure; scatter3(X(1,:), X(2,:), X(3,:), 10, 'filled'); axis square; view(32, 75);
+  X = linear_triangulation(p, p_prime, first_x, first_y, second_x, second_y);
+  figure; 
+  scatter3(X(1,:), X(2,:), X(3,:), 10, 'filled'); 
+  axis square; 
+  view(32, 75);
   
   #---- part 2------
   
-  fh = fopen('pp.dat', 'r');
-  B = fscanf(fh, '%f%f%f%f%f%f%f', [7 inf]); fclose(fh);
+  gh = fopen('pp.dat', 'r');
+  B = fscanf(gh, '%f%f%f%f%f%f%f', [7 inf]); fclose(gh);
   pp_first_x = B(1:1, :);
   pp_first_y = B(2:2, :);
   pp_second_x = B(3:3, :);
@@ -80,6 +81,8 @@ function ass5 ()
   XE = B(5:5, :);
   YE = B(6:6, :);
   ZE = B(7:7, :);
+  
+  X2 = linear_triangulation(p, p_prime, pp_first_x, pp_first_y, pp_second_x, pp_second_y);
   
   endfunction
 
@@ -155,22 +158,23 @@ function p = CreateProjectionMatrix_P(F, second_x, second_y)
   p = [p,e]
 endfunction
 
-function X_mat = linear_triangulation(p, p_prime, second_x, second_y, first_x, first_y)
+function X_mat = linear_triangulation(p, p_prime, first_x, first_y, second_x, second_y)
+  X_mat = [];
   #find  4x4 matrix A for each point pair
   for point_number = 1 : size(first_x, 2)
-    A = [first_x(point_number)*p(3, :)-p(1, :); 
-    first_y(point_number)*p(3, :)-p(2), :; 
-    second_x(point_number)*p_prime(3, :)-p_prime(1, :);
-    second_y(point_number)*p_prime(3, :)-p_prime(2, :)];
+    A = [first_x(point_number) * p(3, :) - p(1, :); 
+        first_y(point_number) * p(3, :) - p(2, :); 
+        second_x(point_number) * p_prime(3, :) - p_prime(1, :);
+        second_y(point_number) * p_prime(3, :) - p_prime(2, :)
+        ];
     # find object point X using constraint AX = 0
     [u,s,v] = svd(A);
     X = v(: ,4);
-    X = X / X(4); 
-    if point_number == 1
-      X_mat = X;
-    else
-     X_mat = [X_mat, X];  
-    end
+    X(1, 1) /= X(4, 1); 
+    X(2, 1) /= X(4, 1); 
+    X(3, 1) /= X(4, 1); 
+    X(4, 1) /= X(4, 1); 
+    X_mat = [X_mat, X];  
   end
   
 endfunction
